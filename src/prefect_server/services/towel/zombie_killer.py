@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import os
 from typing import Any, Dict
 
 import pendulum
@@ -212,11 +213,16 @@ class ZombieKiller(LoopService):
         return zombies
 
     async def run_once(self) -> None:
+        # frequency of heartbeat in minutes.
+        heartbeat_cutoff = os.environ.get("PREFECT__HEARTBEAT_CUTOFF")
+        if heartbeat_cutoff:
+            heartbeat_cutoff = pendulum.now("utc").subtract(minutes=int(heartbeat_cutoff))
+
         # reap task runs
-        await self.reap_zombie_task_runs()
+        await self.reap_zombie_task_runs(heartbeat_cutoff=heartbeat_cutoff)
 
         # reap flow runs
-        await self.reap_zombie_cancelling_flow_runs()
+        await self.reap_zombie_cancelling_flow_runs(heartbeat_cutoff=heartbeat_cutoff)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import os
 from typing import Any, Dict
 
 import pendulum
@@ -33,8 +34,12 @@ class Lazarus(LoopService):
         Returns:
             - int: the number of flow runs that were scheduled
         """
+        # frequency of heartbeat in minutes.
+        heartbeat_cutoff = os.environ.get("PREFECT__HEARTBEAT_CUTOFF")
+        if heartbeat_cutoff:
+            heartbeat_cutoff = pendulum.now("utc").subtract(minutes=int(heartbeat_cutoff))
 
-        return await self.reschedule_flow_runs()
+        return await self.reschedule_flow_runs(heartbeat_cutoff=heartbeat_cutoff)
 
     async def get_flow_runs_where_clause(
         self, heartbeat_cutoff: datetime.datetime
